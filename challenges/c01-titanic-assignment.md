@@ -1,7 +1,7 @@
 RMS Titanic
 ================
-(Your name here)
-2020-
+Daniel Heitz
+02/01/2023
 
 - [Grading Rubric](#grading-rubric)
   - [Individual](#individual)
