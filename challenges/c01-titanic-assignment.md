@@ -215,7 +215,9 @@ df_prop %>% as_tibble() %>% filter(Survived == "Yes") %>% ggplot() + geom_col(ma
 
 **Observations**:
 
-- Write your observations here.
+- More women seem to survive. There is a fast drop off as you go down
+  the classes in the survival rate, especially between 2nd and 3rd
+  class.
 - Is there anything *fishy* going on in your plot?
   - 1st class and 2nd class have way higher survival rates than 3rd
     class and the crew. I would suspect that this means they were more
@@ -241,7 +243,10 @@ df_prop %>% as_tibble() %>% filter(Survived == "Yes") %>% ggplot() + geom_col(ma
 
 **Observations**:
 
-- (Write your observations here.)
+- There are no children in the crew, which is good. There are also a
+  higher proportion of female survivors versus male survivors. The
+  children are split evenly along sex but there is a heavy female bias
+  towards survival among adults.
 - If you saw something *fishy* in q4 above, use your new plot to explain
   the fishy-ness.
   - This seals the deal, there are an overwhelming number of women who
