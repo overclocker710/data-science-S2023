@@ -1,7 +1,6 @@
 Michelson Speed-of-light Measurements
 ================
-(Your name here)
-2020-
+Daniel Heitz 02/08/2023
 
 - [Grading Rubric](#grading-rubric)
   - [Individual](#individual)

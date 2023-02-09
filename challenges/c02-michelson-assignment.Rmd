@@ -1,7 +1,6 @@
 ---
 title: "Michelson Speed-of-light Measurements"
-author: "(Your name here)"
-date: 2020-
+author: Daniel Heitz 02/08/2023
 output:
   github_document:
     toc: true
