@@ -155,11 +155,9 @@ df_q1 %>%
 | 1            |  15 |     299808.0 |
 
 **Observations**: - Write your observations here! - (Your response
-here) - Why might your table differ from Michelson’s? - The paper is
-from 1880, it is very likely there is some error introduced due to
-intermediate rounding or slight calculation errors when he computed his
-averages, as most of the time when computing by hand we are not as
-precise as FP64 when it comes to decimals.
+here) - Why might your table differ from Michelson’s? - It seems like
+Michelson rounded the values to the tens place, while we have more
+precise values.
 
 The `Velocity` values in the dataset are the speed of light *in air*;
 Michelson introduced a couple of adjustments to estimate the speed of
@@ -439,11 +437,6 @@ df_q2 %>%
 
 **Observations**:
 
-- When graphing velocity vs temperature there was more variation in the
-  real results than the simulated ones. I think this might have to do
-  with the fact that since Michelson could not create a good vacuum, the
-  presence of air causes temperature to have an effect. If it were a
-  vacuum there could be no temperature.
 - The Distinctness makes an impact on the measured velocity, although I
   am not sure why. The trends in the real data more or less mirror the
   simulated data.
@@ -451,6 +444,8 @@ df_q2 %>%
   withing the uncertainty. The real data tends to, like in the other
   cases, deviate more from the uncertainty bounds. Both still mostly
   reside within them though.
+- Overall there does not seems to be any trend that explains the
+  difference.
 
 ## Bibliography
 

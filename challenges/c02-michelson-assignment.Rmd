@@ -34,7 +34,7 @@ define how you will be graded, both on an individual and team basis.
 <!-- ------------------------- -->
 
 | Category    | Needs Improvement                                                                                                | Satisfactory                                                                                                               |
-|-------------------|-----------------------------|-------------------------|
+|--------------|----------------------------|-------------------------------|
 | Effort      | Some task **q**'s left unattempted                                                                               | All task **q**'s attempted                                                                                                 |
 | Observed    | Did not document observations, or observations incorrect                                                         | Documented correct observations based on analysis                                                                          |
 | Supported   | Some observations not clearly supported by analysis                                                              | All observations clearly supported by analysis (table, graph, etc.)                                                        |
@@ -120,11 +120,9 @@ df_q1 %>%
 ```
 
 **Observations**: - Write your observations here! - (Your response
-here) - Why might your table differ from Michelson's? - The paper is
-from 1880, it is very likely there is some error introduced due to
-intermediate rounding or slight calculation errors when he computed his
-averages, as most of the time when computing by hand we are not as
-precise as FP64 when it comes to decimals.
+here) - Why might your table differ from Michelson's? - It seems like
+Michelson rounded the values to the tens place, while we have more
+precise values.
 
 The `Velocity` values in the dataset are the speed of light *in air*;
 Michelson introduced a couple of adjustments to estimate the speed of
@@ -368,11 +366,6 @@ df_q2 %>%
 
 **Observations**:
 
--   When graphing velocity vs temperature there was more variation in
-    the real results than the simulated ones. I think this might have to
-    do with the fact that since Michelson could not create a good
-    vacuum, the presence of air causes temperature to have an effect. If
-    it were a vacuum there could be no temperature.
 -   The Distinctness makes an impact on the measured velocity, although
     I am not sure why. The trends in the real data more or less mirror
     the simulated data.
@@ -380,15 +373,17 @@ df_q2 %>%
     withing the uncertainty. The real data tends to, like in the other
     cases, deviate more from the uncertainty bounds. Both still mostly
     reside within them though.
+-   Overall there does not seems to be any trend that explains the
+    difference.
 
 ## Bibliography
 
 -   [1] Michelson, [Experimental Determination of the Velocity of
     Light](https://play.google.com/books/reader?id=343nAAAAMAAJ&hl=en&pg=GBS.PA115)
-    (1880)
+    (1880) 
 -   [2] Henrion and Fischhoff, [Assessing Uncertainty in Physical
     Constants](https://www.cmu.edu/epp/people/faculty/research/Fischoff-Henrion-Assessing%20uncertainty%20in%20physical%20constants.pdf)
-    (1986)
+    (1986) 
 -   [3] BYU video about a [Fizeau-Foucault
     apparatus](https://www.youtube.com/watch?v=Ik5ORaaeaME), similar to
     what Michelson used.
