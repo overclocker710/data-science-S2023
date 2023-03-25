@@ -163,15 +163,36 @@ df_pivoted <-
   )
 
 
+min_MIC <- min(df_pivoted$MIC)
 df_pivoted %>%
-  mutate(normalized_MIC = MIC / min(MIC)) %>% 
+  mutate(normalized_MIC = MIC / min_MIC) %>% 
   ggplot() + 
   geom_col(position = "dodge", aes(fill = antibiotic, x = bacteria, y = normalized_MIC)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_y_log10()
+  scale_y_log10() +
+  geom_hline(yintercept = 0.1/min_MIC)
 ```
 
 ![](c05-antibiotics-assignment_files/figure-gfm/q1.1-1.png)<!-- -->
+
+``` r
+df_pivoted
+```
+
+    ## # A tibble: 48 × 4
+    ##    bacteria              gram     antibiotic       MIC
+    ##    <chr>                 <chr>    <chr>          <dbl>
+    ##  1 Aerobacter aerogenes  negative penicillin   870    
+    ##  2 Aerobacter aerogenes  negative streptomycin   1    
+    ##  3 Aerobacter aerogenes  negative neomycin       1.6  
+    ##  4 Brucella abortus      negative penicillin     1    
+    ##  5 Brucella abortus      negative streptomycin   2    
+    ##  6 Brucella abortus      negative neomycin       0.02 
+    ##  7 Bacillus anthracis    positive penicillin     0.001
+    ##  8 Bacillus anthracis    positive streptomycin   0.01 
+    ##  9 Bacillus anthracis    positive neomycin       0.007
+    ## 10 Diplococcus pneumonia positive penicillin     0.005
+    ## # … with 38 more rows
 
 #### Visual 2 (All variables)
 
@@ -190,7 +211,7 @@ df_pivoted %>%
   geom_col(position = "dodge", aes(fill = antibiotic, x = bacteria, y = normalized_MIC)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_y_log10() +
-  facet_grid(rows = vars(gram))
+  facet_grid(cols = vars(gram), scales = "free_x") 
 ```
 
 ![](c05-antibiotics-assignment_files/figure-gfm/q1.2-1.png)<!-- -->
@@ -205,7 +226,7 @@ Note that your visual must be *qualitatively different* from *all* of
 your other visuals.
 
 ``` r
-# WRITE YOUR CODE HERE
+# Visual 3
 df_pivoted %>%
   filter(antibiotic == "penicillin") %>% 
   mutate(normalized_MIC = MIC / min(MIC)) %>%
@@ -216,7 +237,7 @@ df_pivoted %>%
   scale_y_log10()
 ```
 
-![](c05-antibiotics-assignment_files/figure-gfm/q1.3-1.png)<!-- -->
+![](c05-antibiotics-assignment_files/figure-gfm/q1.3_modified-1.png)<!-- -->
 
 #### Visual 4 (Some variables)
 
@@ -228,17 +249,24 @@ Note that your visual must be *qualitatively different* from *all* of
 your other visuals.
 
 ``` r
-df_pivoted %>%
-  filter(antibiotic == "streptomycin") %>% 
-  mutate(normalized_MIC = MIC / min(MIC)) %>%
-  arrange(+normalized_MIC) %>%
-  ggplot() + 
-  geom_col(position = "dodge", aes(fill = antibiotic, x = reorder(bacteria, normalized_MIC), y = normalized_MIC)) +
+df_antibiotics %>%
+  rowwise() %>% 
+  mutate(max_MIC = 100000 * min(penicillin, streptomycin, neomycin)) %>% 
+  ggplot(aes(x = reorder(bacteria, max_MIC), y = max_MIC, fill = gram)) +
+  geom_col(position = "dodge") +
+  labs(title = "MIC values by Gram stain of bacteria",
+       x = "Bacteria", y = " Max MIC value * 10^5",
+       fill = "Gram Stain") +
+  scale_fill_manual(values = c("purple", "yellow")) +
+  scale_color_identity(guide = "none") +
+  theme_minimal() +
+  theme(legend.position = "bottom") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_y_log10()
+  scale_y_continuous(trans = "log10", limits = c(0.01, NA), breaks = c(0.01, 0.1, 1, 10, 100)) +
+  geom_hline(yintercept = 10000)
 ```
 
-![](c05-antibiotics-assignment_files/figure-gfm/q1.4-1.png)<!-- -->
+![](c05-antibiotics-assignment_files/figure-gfm/q1.4_modified-1.png)<!-- -->
 
 #### Visual 5 (Some variables)
 
@@ -250,16 +278,26 @@ Note that your visual must be *qualitatively different* from *all* of
 your other visuals.
 
 ``` r
-# WRITE YOUR CODE HERE
-df_pivoted %>%
-  filter(antibiotic == "neomycin") %>% 
-  mutate(normalized_MIC = MIC / min(MIC)) %>%
-  arrange(+normalized_MIC) %>%
-  ggplot() + 
-  geom_col(position = "dodge", aes(fill = antibiotic, x = reorder(bacteria, normalized_MIC), y = normalized_MIC)) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_y_log10()
+library(tidyverse)
+library(ggrepel)
+
+df_antibiotics %>%
+  rowwise() %>% 
+  mutate(max_MIC = max(penicillin, streptomycin, neomycin)) %>% 
+  mutate(avg_MIC = mean(c(penicillin, streptomycin, neomycin)),
+         sd_MIC = sd(c(penicillin, streptomycin, neomycin))) %>%
+  ggplot(aes(x = avg_MIC, y = sd_MIC)) +
+  geom_point(size = 3, color = "black") +
+  geom_text_repel(aes(label = bacteria), size = 3, color = "black",
+                  box.padding = 0.5, max.segment.length = 10, max.overlaps = 100) +
+  labs(title = "MIC values by Gram stain of bacteria",
+       x = "Average MIC value of penicillin, streptomycin, and neomycin",
+       y = "Standard deviation of MIC values") +
+  theme_minimal()
 ```
+
+    ## Warning in geom_text_repel(aes(label = bacteria), size = 3, color = "black", :
+    ## Ignoring unknown parameters: `max.segment.length`
 
 ![](c05-antibiotics-assignment_files/figure-gfm/q1.5-1.png)<!-- -->
 
@@ -304,11 +342,10 @@ and in 1984 *Streptococcus fecalis* was renamed *Enterococcus fecalis*
 
 *Observations* - What is your response to the question above? - (Write
 your response here) - Which of your visuals above (1 through 5) is
-**most effective** at helping to answer this question? - None of them
-do, that information is not present in the data, it would be rank
-speculation to come up with an answer from any of these visuals - Why? -
-The information simply isn’t present. There is no evidence for any
-answer that we can work with.
+**most effective** at helping to answer this question? - Visual 4 does
+the best, it shows it grouped with two other streptococcus bacteria. -
+Why? - Because its resistances are similar to theirs, it was grouped
+with them as streptococcus according to the american scientist article.
 
 # References
 
