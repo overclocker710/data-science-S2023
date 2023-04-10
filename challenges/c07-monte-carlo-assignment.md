@@ -1,7 +1,7 @@
 Estimating Pi With a Shotgun
 ================
 Daniel Heitz
-03/25/2023
+04/10/2023
 
 - [Grading Rubric](#grading-rubric)
   - [Individual](#individual)
@@ -180,24 +180,42 @@ set will estimate the probability of points landing in that area (see
 
 ``` r
 ## TASK: Choose a sample size and generate samples
-n <- 1000000 # Choose a sample size
+n <- 10000000 # Choose a sample size
 x <- runif(n)
 y <- runif(n)
-df_q1 <- tibble(x = x, y = y)
+df_q1 <- 
+  tibble(x = x, y = y) %>% 
+  mutate(stat = 4 * ((x*x) + (y*y) < 1))
+df_q1
 ```
+
+    ## # A tibble: 10,000,000 × 3
+    ##        x     y  stat
+    ##    <dbl> <dbl> <dbl>
+    ##  1 0.637 0.234     4
+    ##  2 0.914 0.182     4
+    ##  3 0.957 0.349     0
+    ##  4 0.459 0.894     0
+    ##  5 0.728 0.896     0
+    ##  6 0.723 0.945     0
+    ##  7 0.123 0.888     4
+    ##  8 0.521 0.572     4
+    ##  9 0.949 0.103     4
+    ## 10 0.383 0.438     4
+    ## # … with 9,999,990 more rows
 
 ### **q2** Using your data in `df_q1`, estimate $\pi$.
 
 ``` r
 ## TASK: Estimate pi using your data from q1
-pi_est <-
-  df_q1 %>% 
-  filter((x*x) + (y*y) < 1) %>% 
-  nrow() * 4 / n
-pi_est
+df_q1 %>% 
+  summarize(pi_est = mean(stat))
 ```
 
-    ## [1] 3.140276
+    ## # A tibble: 1 × 1
+    ##   pi_est
+    ##    <dbl>
+    ## 1   3.14
 
 # Quantifying Uncertainty
 
@@ -211,45 +229,43 @@ to assess your $\pi$ estimate.
 ### **q3** Using a CLT approximation, produce a confidence interval for your estimate of $\pi$. Make sure you specify your confidence level. Does your interval include the true value of $\pi$? Was your chosen sample size sufficiently large so as to produce a trustworthy answer?
 
 ``` r
-n <- 1000000 # Choose a sample size
-n_simulations <- 1000 # Choose number of simulations
-pi_estimates <- numeric(n_simulations) # Initialize vector to store estimates
+confidence <- 0.99
+q99 <- qnorm(1 - (1 - confidence) / 2)
 
-for (i in 1:n_simulations) {
-  x <- runif(n)
-  y <- runif(n)
-  pi_estimates[i] <- sum((x*x) + (y*y) < 1) * 4 / n
-}
-
-# Calculate sample mean and standard deviation
-sample_mean <- mean(pi_estimates)
-sample_sd <- sd(pi_estimates)
-
-# Calculate margin of error for 95% confidence interval
-z <- qnorm(0.975)
-margin_of_error <- z * (sample_sd / sqrt(n_simulations))
-
-# Calculate confidence interval
-lower_bound <- sample_mean - margin_of_error
-upper_bound <- sample_mean + margin_of_error
-
-# Print results
-cat(paste0("The 95% confidence interval for pi is [", round(lower_bound, 4), ", ", round(upper_bound, 4), "]."))
+sample_sd <- sd(df_q1$stat)
+sample_mean <- mean(df_q1$stat)
+sample_sd
 ```
 
-    ## The 95% confidence interval for pi is [3.1414, 3.1416].
+    ## [1] 1.641665
+
+``` r
+lower_bound <- sample_mean - (q99 * sample_sd / sqrt(n))
+upper_bound <- sample_mean + (q99 * sample_sd / sqrt(n))
+
+lower_bound
+```
+
+    ## [1] 3.141002
+
+``` r
+upper_bound
+```
+
+    ## [1] 3.143676
+
+\`\`\`
 
 **Observations**:
 
 - Does your interval include the true value of $\pi$?
   - Yes it does.
 - What confidence level did you choose?
-  - 95% confidence interval
+  - 99% confidence interval
 - Was your sample size $n$ large enough? Why do you say that?
-  - Yes, I got pi with 3, almost 4 decimal places. That’s pretty good.
-    On calculators on tests sometimes I just use 3.1416 for calculations
-    and its good enough. I know people often just use 3.14 and thats
-    sufficient.
+  - Yes, I got pi plus or minus 0.02. That’s pretty good. For realistic
+    calculations like simple woodworking this is more than enough, but
+    for real science, we definitely want more precision
 
 # References
 

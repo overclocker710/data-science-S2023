@@ -1,7 +1,7 @@
 ---
 title: "Estimating Pi With a Shotgun"
 author: "Daniel Heitz"
-date: 03/25/2023
+date: 04/10/2023
 output:
   github_document:
     toc: true
@@ -108,22 +108,21 @@ Remember in `e-stat02-probability` we learned how to estimate probabilities as t
 
 ```{r q1-task}
 ## TASK: Choose a sample size and generate samples
-n <- 1000000 # Choose a sample size
+n <- 10000000 # Choose a sample size
 x <- runif(n)
 y <- runif(n)
-df_q1 <- tibble(x = x, y = y)
-
+df_q1 <- 
+  tibble(x = x, y = y) %>% 
+  mutate(stat = 4 * ((x*x) + (y*y) < 1))
+df_q1
 ```
 
 ### **q2** Using your data in `df_q1`, estimate $\pi$.
 
 ```{r q2-task}
 ## TASK: Estimate pi using your data from q1
-pi_est <-
-  df_q1 %>% 
-  filter((x*x) + (y*y) < 1) %>% 
-  nrow() * 4 / n
-pi_est
+df_q1 %>% 
+  summarize(pi_est = mean(stat))
 ```
 
 # Quantifying Uncertainty
@@ -135,32 +134,19 @@ You now have an estimate of $\pi$, but how trustworthy is that estimate? In `e-s
 ### **q3** Using a CLT approximation, produce a confidence interval for your estimate of $\pi$. Make sure you specify your confidence level. Does your interval include the true value of $\pi$? Was your chosen sample size sufficiently large so as to produce a trustworthy answer?
 
 ```{r q3-task}
-n <- 1000000 # Choose a sample size
-n_simulations <- 1000 # Choose number of simulations
-pi_estimates <- numeric(n_simulations) # Initialize vector to store estimates
+confidence <- 0.99
+q99 <- qnorm(1 - (1 - confidence) / 2)
 
-for (i in 1:n_simulations) {
-  x <- runif(n)
-  y <- runif(n)
-  pi_estimates[i] <- sum((x*x) + (y*y) < 1) * 4 / n
-}
+sample_sd <- sd(df_q1$stat)
+sample_mean <- mean(df_q1$stat)
+sample_sd
 
-# Calculate sample mean and standard deviation
-sample_mean <- mean(pi_estimates)
-sample_sd <- sd(pi_estimates)
+lower_bound <- sample_mean - (q99 * sample_sd / sqrt(n))
+upper_bound <- sample_mean + (q99 * sample_sd / sqrt(n))
 
-# Calculate margin of error for 95% confidence interval
-z <- qnorm(0.975)
-margin_of_error <- z * (sample_sd / sqrt(n_simulations))
-
-# Calculate confidence interval
-lower_bound <- sample_mean - margin_of_error
-upper_bound <- sample_mean + margin_of_error
-
-# Print results
-cat(paste0("The 95% confidence interval for pi is [", round(lower_bound, 4), ", ", round(upper_bound, 4), "]."))
-
-
+lower_bound
+upper_bound
+```
 ```
 
 
@@ -169,9 +155,9 @@ cat(paste0("The 95% confidence interval for pi is [", round(lower_bound, 4), ", 
 -   Does your interval include the true value of $\pi$?
     -   Yes it does.
 -   What confidence level did you choose?
-    -   95% confidence interval
+    -   99% confidence interval
 -   Was your sample size $n$ large enough? Why do you say that?
-    -   Yes, I got pi with 3, almost 4 decimal places. That's pretty good. On calculators on tests sometimes I just use 3.1416 for calculations and its good enough. I know people often just use 3.14 and thats sufficient.
+    -   Yes, I got pi plus or minus 0.02. That's pretty good. For realistic calculations like simple woodworking this is more than enough, but for real science, we definitely want more precision
 
 # References
 
