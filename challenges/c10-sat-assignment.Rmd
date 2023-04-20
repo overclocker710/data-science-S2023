@@ -1,7 +1,7 @@
 ---
 title: "SAT and College Grades"
-author: "(Your name here)"
-date: 2020-
+author: "Daniel Heitz"
+date: 2023-04-19
 output:
   github_document:
     toc: true
@@ -57,9 +57,9 @@ All the deliverables stated in the rubrics above are due **at midnight** before 
 
 ```{r q1-task}
 ## TODO:
-df_sat <- NA
-
-## TODO: Do your "first checks"
+df_sat <- read_excel("sat.xls")
+df_sat
+summary(df_sat)
 ```
 
 **Observations**:
@@ -104,14 +104,21 @@ df_composite <-
 
 ```{r q2-task}
 ## TODO:
+df_composite %>% 
+  gather(key = "facet", value = "y", high_GPA, both_SAT) %>%
+  ggplot(aes(x = univ_GPA, y = y)) +
+  geom_point() +
+  # Facet by the gathered column
+  facet_wrap(~facet, scales = "free_y")
 ```
+
 
 **Observations**:
 
 - What relationship do `univ_GPA` and `both_SAT` exhibit?
-  - (Your response here)
+  - Positive, accelerating correlation
 - What relationship do `univ_GPA` and `high_GPA` exhibit?
-  - (Your response here)
+  - Positive, accelerating correlation
 
 ### Hypothesis Testing with a Correlation Coefficient
 <!-- ------------------------- -->
@@ -131,16 +138,38 @@ The R function `cor.test` implements such a hypothesis test under the assumption
 ### __q3__ Plot histograms for `both_SAT, high_GPA, univ_GPA`. Which---if any---of the variables look approximately normally distributed.
 
 ```{r q3-task}
+library(gridExtra)
+
+# Create the first histogram for univ_GPA
+p1 <- df_composite %>%
+  ggplot(aes(x = univ_GPA)) +
+  geom_histogram(binwidth = 0.2, fill = "red") +
+  ggtitle("univ_GPA")
+
+# Create the second histogram for high_GPA
+p2 <- df_composite %>%
+  ggplot(aes(x = high_GPA)) +
+  geom_histogram(binwidth = 0.2, fill = "green") +
+  ggtitle("high_GPA")
+
+# Create the third histogram for both_SAT
+p3 <- df_composite %>%
+  ggplot(aes(x = both_SAT)) +
+  geom_histogram(binwidth = 30, fill = "blue") +
+  ggtitle("both_SAT")
+
+# Arrange the three histograms next to each other
+grid.arrange(p1, p2, p3, ncol = 3)
 ```
 
 **Observations**:
 
 - To what extent does `both_SAT` look like a normal distribution?
-  - (Your response here)
+  - Its not great but its pretty good. I played around with the binwidth and in all of them it bore some resemblance so I'd say it probably is.
 - To what extent does `high_GPA` look like a normal distribution?
-  - (Your response here)
+  - Pretty good, there's a hole in the middle but on both sides it looks fine, so I'd go with a fairly strong resemblance
 - To what extent does `univ_GPA` look like a normal distribution?
-  - (Your response here)
+  - It actually looks like two of them, one smaller than the other. Overall not very, but each peak definitely looks somewhat like one (though quite steep)
 
 Keep in mind your findings as you complete q4.
 
@@ -150,6 +179,33 @@ Keep in mind your findings as you complete q4.
 ## TODO: Use the function cor.test() to test the correlations between
 ##       high_GPA and univ_GPA, as well as between
 ##       both_SAT and univ_GPA
+# Calculate the correlation and confidence interval between high_GPA and univ_GPA
+high_univ_cor <- cor.test(df_composite$high_GPA, df_composite$univ_GPA)
+high_univ_df <- tibble(
+  estimate = high_univ_cor$estimate,
+  conf.low = high_univ_cor$conf.int[1],
+  conf.high = high_univ_cor$conf.int[2]
+) %>%
+  summarise(
+    "Correlation between high_GPA and univ_GPA" = estimate,
+    "Lower bound of confidence interval" = conf.low,
+    "Upper bound of confidence interval" = conf.high
+  )
+
+# Calculate the correlation and confidence interval between both_SAT and univ_GPA
+both_univ_cor <- cor.test(df_composite$both_SAT, df_composite$univ_GPA)
+both_univ_df <- tibble(
+  estimate = both_univ_cor$estimate,
+  conf.low = both_univ_cor$conf.int[1],
+  conf.high = both_univ_cor$conf.int[2]
+) %>%
+  summarise(
+    "Correlation between both_SAT and univ_GPA" = estimate,
+    "Lower bound of confidence interval" = conf.low,
+    "Upper bound of confidence interval" = conf.high
+  )
+high_univ_df
+both_univ_df
 ```
 
 **Observations**:
@@ -157,11 +213,11 @@ Keep in mind your findings as you complete q4.
 - Which correlations are significantly nonzero?
   - (Your response here)
 - Which of `high_GPA` and `both_SAT` seems to be more strongly correlated with `univ_GPA`?
-  - (Your response here)
+  - high_GPA seems to be more strongly correlated, although the interval has enough overlap that I cannot say this definitively.
 - How do the results here compare with the visual you created in q2?
-  - (Your response here)
+  - It about lines up, yeah they all look similar but the GPA graphs both have a double peak behavior with the double peaks being more distinct in univ_GPA, but each peak and overall ignoring the gap all resemble similar normal distributions.
 - Based on these results, what can we say about the predictive capabilities of both `high_GPA` and `both_SAT` to predict `univ_GPA`?
-  - (Your response here)
+  - They are both fairly good predictors, especially high_GPA. Its not amazing, but it is definitely a strong correlation that easily gives us a qualitative sense.
 
 Finally, let's use the bootstrap to perform the same test using *different* assumptions.
 
@@ -169,14 +225,43 @@ Finally, let's use the bootstrap to perform the same test using *different* assu
 
 ```{r q5-task}
 ## TODO: Use the bootstrap to compute a confidence interval for corr[high_GPA, univ_GPA]
+# Set the number of bootstrap replicates
+# Set the number of bootstrap replicates
+n_replicates <- 1000
+
+# Create a function to calculate the correlation for a given bootstrap replicate
+calc_correlation <- function(data) {
+  cor(data$high_GPA, data$univ_GPA)
+}
+
+# Generate bootstrap replicates of the correlation
+correlation_replicates <- map_dbl(1:n_replicates, ~ df_composite %>%
+  sample_frac(replace = TRUE) %>%
+  calc_correlation())
+
+# Calculate the estimate and confidence interval for the correlation
+correlation_estimate <- mean(correlation_replicates)
+correlation_ci <- quantile(correlation_replicates, c(0.005, 0.995))
+
+# Display the results
+tibble(
+  estimate = correlation_estimate,
+  conf.low = correlation_ci[1],
+  conf.high = correlation_ci[2]
+) %>%
+  summarise(
+    "Bootstrap estimate of correlation between high_GPA and univ_GPA" = estimate,
+    "Lower bound of confidence interval" = conf.low,
+    "Upper bound of confidence interval" = conf.high
+  )
 ```
 
 **Observations**:
 
 - How does your estimate from q5 compare with your estimate from q4?
-  - (Your response here)
+  - Its a little bigger but it does fully include the old estimate.
 - How does your CI from q5 compare with your CI from q4?
-  - (Your response here)
+  - They're almost exactly the same, 0.780 vs 0.781.
 
 *Aside*: When you use two different approximations to compute the same quantity and get similar results, that's an *encouraging sign*. Such an outcome lends a bit more credibility to the results.
 
@@ -225,7 +310,7 @@ In this case, we're testing for whether $X$ has a significant effect on $Y$. Let
 
 ```{r q6-task}
 ## TODO: Fit a model of univ_GPA on the predictor both_SAT
-fit_basic <- NA
+fit_basic <- lm(univ_GPA ~ both_SAT, data = df_composite)
 
 ## NOTE: The following computes confidence intervals on regression coefficients
 fit_basic %>%
@@ -233,14 +318,22 @@ fit_basic %>%
     conf.int = TRUE,
     conf.level = 0.99
   )
+
+model_summary <- summary(fit_basic)
+
+# Get the R-squared value
+r_squared <- model_summary$r.squared
+
+# Print the R-squared value
+r_squared
 ```
 
 **Observations**:
 
 - What is the confidence interval on the coefficient of `both_SAT`? Is this coefficient significantly different from zero?
-  - (Your response here)
+  - 0.001984 and 0.00349. Yes I would say this is significantly different because the interval doesn't include 0.
 - By itself, how well does `both_SAT` predict `univ_GPA`?
-  - (Your response here)
+  - I would say fairly decently. Its not great, the R2 value is only 0.47. This definitely suggests a real relationship though. I would characterize our regression as a good ballpark estimate but not something we should follow religiously.
 
 Remember from `e-model03-interp-warnings` that there are challenges with interpreting regression coefficients! Let's investigate that idea further.
 
@@ -248,16 +341,83 @@ Remember from `e-model03-interp-warnings` that there are challenges with interpr
 
 ```{r q7-task}
 ## TODO: Fit and assess models with predictors both_SAT + high_GPA, and high_GPA alone
+# Fit the linear model with both_SAT and high_GPA as predictors
+model1 <- lm(univ_GPA ~ both_SAT + high_GPA, data = df_composite)
+
+# Summarize the model
+summary(model1)
+
+# Fit the linear model with only high_GPA as predictor
+model2 <- lm(univ_GPA ~ high_GPA, data = df_composite)
+
+# Summarize the model
+summary(model2)
+
+# Assess the performance of model1
+
+# Get the summary of model1
+model1_summary <- summary(model1)
+
+# Get the R-squared value for model1
+r_squared1 <- model1_summary$r.squared
+
+# Print the R-squared value for model1
+cat("R-squared value for model1:", r_squared1, "\n")
+
+# Get the p-values for each predictor in model1
+p_values1 <- model1_summary$coefficients[, 4]
+
+# Print the p-values for model1
+cat("p-values for predictors in model1:\n")
+print(p_values1)
+
+# Create a residual plot for model1
+plot(model1, which = 1)
+
+# Get the 99% confidence intervals for all coefficients in model1
+ci_model1 <- confint(model1, level = 0.99)
+
+# Print the 99% confidence intervals for all coefficients in model1
+cat("99% confidence intervals for all coefficients in model1:\n")
+print(ci_model1)
+
+# Assess the performance of model2
+
+# Get the summary of model2
+model2_summary <- summary(model2)
+
+# Get the R-squared value for model2
+r_squared2 <- model2_summary$r.squared
+
+# Print the R-squared value for model2
+cat("R-squared value for model2:", r_squared2, "\n")
+
+# Get the p-values for each predictor in model2
+p_values2 <- model2_summary$coefficients[, 4]
+
+# Print the p-values for model2
+cat("p-values for predictors in model2:\n")
+print(p_values2)
+
+# Create a residual plot for model2
+plot(model2, which = 1)
+
+# Get the 99% confidence intervals for all coefficients in model2
+ci_model2 <- confint(model2, level = 0.99)
+
+# Print the 99% confidence intervals for all coefficients in model2
+cat("99% confidence intervals for all coefficients in model2:\n")
+print(ci_model2)
 ```
 
 **Observations**:
 
 - How well do these models perform, compared to the one you built in q6?
-  - (Your response here)
+  - Even better, their R2 values are improved and both have great p-values.
 - What is the confidence interval on the coefficient of `both_SAT` when including `high_GPA` as a predictor?? Is this coefficient significantly different from zero?
-  - (Your response here)
+  - -0.00022 to 0.00181. This is not significantly different from zero.
 - How do the hypothesis test results compare with the results in q6?
-  - (Your response here)
+  - These results suggest that both_SAT is an inferior predictor than high_GPA, and actually suggests that both_SAT is not a good predictor in general which goes against what we found in part 6.
 
 ## Synthesize
 <!-- ------------------------- -->
@@ -269,9 +429,9 @@ Before closing, let's synthesize a bit from the analyses above.
 **Observations**:
 
 - Between `both_SAT` and `high_GPA`, which single variable would you choose to predict `univ_GPA`? Why?
-  - (Your response here)
+  - high_GPA, all the metrics favor it as a predictor of univ_GPA.
 - Is `both_SAT` an effective predictor of `univ_GPA`? What specific pieces of evidence do you have in favor of `both_SAT` being effective? What specific pieces of evidence do you have against?
-  - (Your response here)
+  - Yes I would say it is. Our bootstrap confidence intervals, the regression from q6, the bar graphs, and the dot plots all suggest there is some relationship. The evidence against is the findings in q7, but I more interpret that as saying that it is a significantly worse predictor than high_GPA, not that it isn't able to produce any reasonable prediciton.
 
 # End Notes
 <!-- ----------------------------------------------------------------------- -->
