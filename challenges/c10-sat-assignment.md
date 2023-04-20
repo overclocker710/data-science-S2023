@@ -186,21 +186,22 @@ summary(df_sat)
 
 - Fill in the following “data dictionary”
 
-| Column     | Meaning |
-|------------|---------|
-| `high_GPA` | ???     |
-| `math_SAT` | ???     |
-| `verb_SAT` | ???     |
-| `comp_GPA` | ???     |
-| `univ_GPA` | ???     |
+| Column     | Meaning                            |
+|------------|------------------------------------|
+| `high_GPA` | highschool GPA                     |
+| `math_SAT` | The math SAT Score                 |
+| `verb_SAT` | The writing SAT Score              |
+| `comp_GPA` | I can’t tell, this one confuses me |
+| `univ_GPA` | Their college GPA                  |
 
 - What information do we have about these students?
-  - (Your response here)
+  - Their GPAs and SAT scores
 - What kinds of information *do we not have* about these students?
-  - (Your response here)
+  - The number of AP classes they took in HS as well as what their
+    college courseload is
 - Based on these missing variables, what possible effects could be
   present in the data that we would have *no way of detecting*?
-  - (Your response here)
+  - The difficulty of their classes (which affects their grades)
 
 # Analysis with Hypothesis Testing
 
@@ -431,7 +432,7 @@ tibble(
     ## # A tibble: 1 × 3
     ##   Bootstrap estimate of correlation between high_GPA and univ_…¹ Lower…² Upper…³
     ##                                                            <dbl>   <dbl>   <dbl>
-    ## 1                                                          0.779   0.662   0.865
+    ## 1                                                          0.780   0.656   0.861
     ## # … with abbreviated variable names
     ## #   ¹​`Bootstrap estimate of correlation between high_GPA and univ_GPA`,
     ## #   ²​`Lower bound of confidence interval`,
