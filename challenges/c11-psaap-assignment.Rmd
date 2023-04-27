@@ -1,7 +1,7 @@
 ---
 title: "Regression Case Study: PSAAP II"
-author: "(Your name here)"
-date: 2020-
+author: "Daniel Heitz"
+date: 2023-04-27
 output:
   github_document:
     toc: true
@@ -10,24 +10,28 @@ output:
 *Purpose*: Confidence and prediction intervals are useful for studying "pure sampling" of some distribution. However, we can combine CI and PI with regression analysis to equip our modeling efforts with powerful notions of uncertainty. In this challenge, you will use fluid simulation data in a regression analysis with uncertainty quantification (CI and PI) to support engineering design.
 
 <!-- include-rubric -->
+
 # Grading Rubric
+
 <!-- -------------------------------------------------- -->
 
 Unlike exercises, **challenges will be graded**. The following rubrics define how you will be graded, both on an individual and team basis.
 
 ## Individual
+
 <!-- ------------------------- -->
 
-| Category | Needs Improvement | Satisfactory |
-|----------|----------------|--------------|
-| Effort | Some task __q__'s left unattempted | All task __q__'s attempted |
-| Observed | Did not document observations, or observations incorrect | Documented correct observations based on analysis |
-| Supported | Some observations not clearly supported by analysis | All observations clearly supported by analysis (table, graph, etc.) |
-| Assessed | Observations include claims not supported by the data, or reflect a level of certainty not warranted by the data | Observations are appropriately qualified by the quality & relevance of the data and (in)conclusiveness of the support |
-| Specified | Uses the phrase "more data are necessary" without clarification | Any statement that "more data are necessary" specifies which *specific* data are needed to answer what *specific* question |
-| Code Styled | Violations of the [style guide](https://style.tidyverse.org/) hinder readability | Code sufficiently close to the [style guide](https://style.tidyverse.org/) |
+| Category    | Needs Improvement                                                                                                | Satisfactory                                                                                                               |
+|-------------------|-----------------------------|-------------------------|
+| Effort      | Some task **q**'s left unattempted                                                                               | All task **q**'s attempted                                                                                                 |
+| Observed    | Did not document observations, or observations incorrect                                                         | Documented correct observations based on analysis                                                                          |
+| Supported   | Some observations not clearly supported by analysis                                                              | All observations clearly supported by analysis (table, graph, etc.)                                                        |
+| Assessed    | Observations include claims not supported by the data, or reflect a level of certainty not warranted by the data | Observations are appropriately qualified by the quality & relevance of the data and (in)conclusiveness of the support      |
+| Specified   | Uses the phrase "more data are necessary" without clarification                                                  | Any statement that "more data are necessary" specifies which *specific* data are needed to answer what *specific* question |
+| Code Styled | Violations of the [style guide](https://style.tidyverse.org/) hinder readability                                 | Code sufficiently close to the [style guide](https://style.tidyverse.org/)                                                 |
 
 ## Due Date
+
 <!-- ------------------------- -->
 
 All the deliverables stated in the rubrics above are due **at midnight** before the day of the class discussion of the challenge. See the [Syllabus](https://docs.google.com/document/d/1qeP6DUS8Djq_A0HMllMqsSqX3a9dbcx1/edit?usp=sharing&ouid=110386251748498665069&rtpof=true&sd=true) for more information.
@@ -64,18 +68,20 @@ unzip(filename_zip, exdir = "./data")
 df_psaap <- read_csv(filename_psaap)
 ```
 
-![PSAAP II irradiated core flow](./images/psaap-setup.png)
-Figure 1. An example simulation, frozen at a specific point in time. An initial simulation is run (HIT SECTION) to generate a turbulent flow with particles, and that swirling flow is released into a rectangular domain (RADIATED SECTION) with bulk downstream flow (left to right). Concentrated solar radiation transmits through the optically transparent fluid, but deposits heat into the particles. The particles then convect heat into the fluid, which heats up the flow. The false-color image shows the fluid temperature: Notice that there are "hot spots" where hot particles have deposited heat into the fluid. The dataset `df_psaap` gives measurements of `T_norm = (T - T0) / T0` averaged across planes at various locations along the RADIATED SECTION.
+![PSAAP II irradiated core flow](./images/psaap-setup.png) Figure 1. An example simulation, frozen at a specific point in time. An initial simulation is run (HIT SECTION) to generate a turbulent flow with particles, and that swirling flow is released into a rectangular domain (RADIATED SECTION) with bulk downstream flow (left to right). Concentrated solar radiation transmits through the optically transparent fluid, but deposits heat into the particles. The particles then convect heat into the fluid, which heats up the flow. The false-color image shows the fluid temperature: Notice that there are "hot spots" where hot particles have deposited heat into the fluid. The dataset `df_psaap` gives measurements of `T_norm = (T - T0) / T0` averaged across planes at various locations along the RADIATED SECTION.
 
-### __q1__ Perform your "initial checks" to get a sense of the data.
+### **q1** Perform your "initial checks" to get a sense of the data.
 
 ```{r q1-task}
 ## TODO: Perform your initial checks
+df_psaap %>% head()
+df_psaap %>% tail()
+df_psaap %>% summary()
 ```
 
 **Observations**:
 
-- (Take notes here!)
+-   There are a total of 35 simulations. Most columns don't have massive variation and seem to vary within the same order of magnitude. For the most part we should therefore be OK to use linear scales for visualizations as opposed to log scales.
 
 The important variables in this dataset are:
 
@@ -106,12 +112,22 @@ The important variables in this dataset are:
 
 The primary output of interest is `T_norm = (avg_T - T_f) / T_f`, the normalized (dimensionless) temperature rise of the fluid, due to heat transfer. These measurements are taken at locations `x` along a column of fluid, for different experimental settings (e.g. different dimensions `W, L`, different flow speeds `U_0`, etc.).
 
-### __q2__ Visualize `T_norm` against `x`. Note that there are multiple simulations at different values of the Input variables: Each simulation result is identified by a different value of `idx`.
+### **q2** Visualize `T_norm` against `x`. Note that there are multiple simulations at different values of the Input variables: Each simulation result is identified by a different value of `idx`.
 
 ```{r q2-task}
 ## TODO: Visualize the data in df_psaap with T_norm against x;
 ##       design your visual to handle the multiple simulations,
 ##       each identified by different values of idx
+
+df_psaap %>% 
+  ggplot(
+    aes(x = x,
+        y = T_norm,
+        color = factor(idx)
+        )
+    ) +
+  geom_line() +
+  labs(color = "idx")
 ```
 
 ## Modeling
@@ -130,7 +146,7 @@ One of the key decisions we must make in modeling is choosing predictors (featur
 
 Reasoning about our variables---at least at a *high level*---can help us to avoid including *fallacious* predictors in our models. You'll explore this idea in the next task.
 
-### __q3__ The following code chunk fits a few different models. Compute a measure of model accuracy for each model on `df_validate`, and compare their performance.
+### **q3** The following code chunk fits a few different models. Compute a measure of model accuracy for each model on `df_validate`, and compare their performance.
 
 ```{r q3-task}
 ## NOTE: No need to edit these models
@@ -148,25 +164,45 @@ fit_nonphysical <-
 
 ## TODO: Compute a measure of accuracy for each fit above;
 ##       compare their relative performance
+df_validate <-
+  df_validate %>% 
+  mutate(
+    pred_baseline = predict(fit_baseline, newdata = .),
+    pred_cheat = predict(fit_cheat, newdata = .),
+    pred_nonphysical = predict(fit_nonphysical, newdata = .)
+  )
+
+mse_baseline <-
+  mean((df_validate$T_norm - df_validate$pred_baseline)^2)
+mse_cheat <-
+  mean((df_validate$T_norm - df_validate$pred_cheat)^2)
+mse_nonphysical <-
+  mean((df_validate$T_norm - df_validate$pred_nonphysical)^2)
+
+mse_baseline
+mse_cheat
+mse_nonphysical
 ```
 
 **Observations**:
 
-- Which model is *most accurate*? Which is *least accurate*?
-  - (Your response here)
-- What *Category* of variable is `avg_T`? Why is it such an effective predictor?
-  - (Your response here)
-- Would we have access to `avg_T` if we were trying to predict a *new* value of `T_norm`? Is `avg_T` a valid predictor?
-  - (Your response here)
-- What *Category* of variable is `idx`? Does it have any physical meaning?
-  - (Your response here)
+-   Which model is *most accurate*? Which is *least accurate*?
+    -   the cheat model is the most accurate and the nonphysical model is the least accurate.
+-   What *Category* of variable is `avg_T`? Why is it such an effective predictor?
+    -   avg_T is a quantitative variable that represents temperature of the fluid averaged over a plane. Being an average it encapsulates a lot of information, and I believe this average includes the region where T_norm is measured, so of course it is a good predictor.
+-   Would we have access to `avg_T` if we were trying to predict a *new* value of `T_norm`? Is `avg_T` a valid predictor?
+    -   No, we wouldn't. They are intertwined.
+-   What *Category* of variable is `idx`? Does it have any physical meaning?
+    -   idx can be considered an identifier variable. It has no physical meaning and is simply used to identify and organized the multiple trials that occurred.
 
-### __q4__ Use a combination of EDA and train-validation error to build a model by selecting *reasonable* predictors for the `formula` argument. Document your findings under *observations* below. Try to build the most accurate model you can!
+### **q4** Use a combination of EDA and train-validation error to build a model by selecting *reasonable* predictors for the `formula` argument. Document your findings under *observations* below. Try to build the most accurate model you can!
 
 ```{r q4-task}
 ## TODO: Fit a model for T_norm using only *principled* predictors, try to
 ##       optimize your validation error.
-fit_q4 <- NA
+fit_q4 <-
+  df_train %>% 
+  lm(formula = T_norm ~ x + W + L + U_0) 
 
 ## NOTE: No need to change these error calculations; use them to
 ##       help define your model
@@ -176,8 +212,8 @@ rsquare(fit_q4, df_validate)
 
 **Observations**:
 
-- (Use this space to document which predictors seem useful.)
-- *Note*: You don't just have to fiddle with `formula`! Remember that you have a whole toolkit of *EDA* tools
+-   Based on looking at what each variable represented, I tried a few different variables and found out that x, W, L, and U_0 seem to be the best combination. I though I_0 or eps_p would work really well, but surprisingly they made it slightly worse and independently were unable to predict to any meaningful degree, so I dumped them.
+-   *Note*: You don't just have to fiddle with `formula`! Remember that you have a whole toolkit of *EDA* tools
 
 ## Contrasting CI and PI
 
@@ -238,14 +274,14 @@ Under the `ci` facet we have the regression confidence intervals and the mean tr
 
 **Punchline**:
 
-- Confidence intervals are meant to capture the *mean trend*
-- Prediction intervals are meant to capture *new observations*
+-   Confidence intervals are meant to capture the *mean trend*
+-   Prediction intervals are meant to capture *new observations*
 
 Both CI and PI are a quantification of the uncertainty in our model, but the two intervals designed to answer different questions.
 
 Since CI and PI are a quantification of uncertainty, they should tend to *narrow* as our model becomes more confident in its predictions. Building a more accurate model will often lead to a reduction in uncertainty. We'll see this phenomenon in action with the following task:
 
-### __q5__ The following code will construct a predicted-vs-actual plot with your model from *q4* and add prediction intervals. Study the results and answer the questions below under *observations*.
+### **q5** The following code will construct a predicted-vs-actual plot with your model from *q4* and add prediction intervals. Study the results and answer the questions below under *observations*.
 
 ```{r q5-task}
 ## TODO: Run this code and interpret the results
@@ -284,12 +320,12 @@ bind_rows(
 
 **Observations**:
 
-- Which model tends to be more accurate? How can you tell from this predicted-vs-actual plot?
-  - (Your response here)
-- Which model tends to be *more confident* in its predictions? Put differently, which model has *narrower prediction intervals*?
-  - (Your response here)
-- How many predictors does the `fit_simple` model need in order to make a prediction? What about your model `fit_q4`?
-  - (Your response here)
+-   Which model tends to be more accurate? How can you tell from this predicted-vs-actual plot?
+    -   My model from q4 seems to be more accurate because it follows the line more closely
+-   Which model tends to be *more confident* in its predictions? Put differently, which model has *narrower prediction intervals*?
+    -   My model from q4 is more confident in its predictions, it has narrower prediction interval bars.
+-   How many predictors does the `fit_simple` model need in order to make a prediction? What about your model `fit_q4`?
+    -   fit_simple only needs one predictor, while my fit_q4 needs four of them.
 
 Based on these results, you might be tempted to always throw every reasonable variable into the model. For some cases, that might be the best choice. However, some variables might be *outside our control*; for example, variables involving human behavior cannot be fully under our control. Other variables may be *too difficult to measure*; for example, it is *in theory* possible to predict the strength of a component by having detailed knowledge of its microstructure. However, it is *patently infeasible* to do a detailed study of *every single component* that gets used in an airplane.
 
@@ -297,7 +333,7 @@ In both cases---human behavior and variable material properties---we would be be
 
 # Case Study: Predicting Performance Ranges
 
-### __q6__ You are consulting with a team that is designing a prototype heat transfer device. They are asking you to help determine a *dependable range of values* for `T_norm` they can design around for this *single prototype*. The realized value of `T_norm` must not be too high as it may damage the downstream equipment, but it must also be high enough to extract an acceptable amount of heat.
+### **q6** You are consulting with a team that is designing a prototype heat transfer device. They are asking you to help determine a *dependable range of values* for `T_norm` they can design around for this *single prototype*. The realized value of `T_norm` must not be too high as it may damage the downstream equipment, but it must also be high enough to extract an acceptable amount of heat.
 
 In order to maximize the conditions under which this device can operate successfully, the design team has chosen to fix the variables listed in the table below, and consider the other variables to fluctuate according to the values observed in `df_psaap`.
 
@@ -324,25 +360,49 @@ pr_level <- 0.8
 #        use the validation data to check your uncertainty estimates, and 
 #        make a recommendation on a *dependable range* of values for T_norm
 #        at the point `df_design`
-fit_q6 <- NA
+fit_q6 <-
+  df_train %>% 
+  lm(formula = T_norm ~ x + W + L + U_0) 
 
+rsquare(fit_q6, df_train)
+rsquare(fit_q6, df_validate)
+
+pred_q6 <- predict(fit_q6, newdata = df_validate)
+
+pred_uncertainty <-
+  add_uncertainties(df_design, fit_q6, interval = "prediction", prefix = "pi", level = pr_level)
+
+df_validate %>% 
+  add_uncertainties(fit_q6, interval = "prediction", prefix = "pi", level = pr_level) %>% 
+  mutate(
+    within_interval = T_norm >= pi_lwr & T_norm <= pi_upr
+    ) %>% 
+  summarise(percent_within_interval = mean(within_interval) * 100) %>% 
+  pull(percent_within_interval)
+  
+
+lower_bound <- pred_q6 - pred_uncertainty
+upper_bound <- pred_q6 + pred_uncertainty
+
+pred_uncertainty
+#cat("Dependable range of values for T_norm at the point df_design: [", lower_bound, ",", upper_bound, "]\n")
 ```
 
 **Recommendation**:
 
-- How much do you trust your model? Why?
-  - (Your response here)
-- What kind of interval---confidence or prediction---would you use for this task, and why?
-  - (Your response here)
-- What fraction of validation cases lie within the interval you predict? How does this compare with `pr_level`?
-  - (Your response here)
-- What interval for `T_norm` would you recommend the design team to plan around?
-  - (Your response here)
-- Are there any other recommendations you would provide?
-  - (Your response here)
+-   How much do you trust your model? Why?
+    -   I trust it quite a bit, I gave it all relevant data that I could, and tested many versions and this came out on top. Also it does have prediction intervals so I trust it as much as the prediction intervals specify.
+-   What kind of interval---confidence or prediction---would you use for this task, and why?
+    -   Prediction intervals, because we are making new predictions we should be using prediction intervals to see the uncertainty in the range of possible predictions
+-   What fraction of validation cases lie within the interval you predict? How does this compare with `pr_level`?
+    -   93.3%, which is a very high percentage, far higher than the 80% we requested which means this prediction interval is conservative.
+-   What interval for `T_norm` would you recommend the design team to plan around?
+    -   1.46 to 2.30, this is what our model predicts, with at least 80% confidence.
+-   Are there any other recommendations you would provide?
+    -   T_norm will likely not even vary that much based on the validation data test, showing that 80% probability is conservative and it is likely above 90% real probability.
 
 *Bonus*: One way you could take this analysis further is to recommend which other variables the design team should tightly control. You could do this by fixing values in `df_design` and adding them to the model. An exercise you could carry out would be to systematically test the variables to see which ones the design team should more tightly control.
 
 # References
 
-- [1] Jofre, del Rosario, and Iaccarino "Data-driven dimensional analysis of heat transfer in irradiated particle-laden turbulent flow" (2020) *International Journal of Multiphase Flow*, https://doi.org/10.1016/j.ijmultiphaseflow.2019.103198
+-   [1] Jofre, del Rosario, and Iaccarino "Data-driven dimensional analysis of heat transfer in irradiated particle-laden turbulent flow" (2020) *International Journal of Multiphase Flow*, <https://doi.org/10.1016/j.ijmultiphaseflow.2019.103198>
